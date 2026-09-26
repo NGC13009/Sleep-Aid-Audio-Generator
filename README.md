@@ -125,10 +125,6 @@ The custom spectrum uses `[f, dB]` control points to perform monotone cubic inte
 a=10^{\mathrm{dB}/20}.
 \]
 
-### Control-Point Interpolation
-
-Custom spectra use `[f, dB]` control points with monotone cubic interpolation (PCHIP, `makeSmoothDb`) in the log-frequency domain to avoid overshoot; `pointsToAmp` then converts relative dB to amplitude.
-
 ### Filtering and Natural Sounds
 
 `lp1 / hp1 / lp1mod` are first-order low-pass / high-pass filters (processed twice to eliminate initial transients and ensure loop boundary continuity). `slowNoise` generates low-frequency band-limited slow envelopes, `addBursts` overlays random pulse clusters (raindrops, thunder), and `humTones` overlays sinusoidal harmonics aligned to FFT bins (fan, air-conditioner hum). Natural / environmental presets combine these to create slow fluctuations, gusts, swells, and other characteristics.
