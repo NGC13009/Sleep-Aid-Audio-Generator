@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#efefef">
+  <meta name="description" content="噪声模拟器：白噪声、粉红噪声、布朗噪声、自定义功率谱随机过程合成，以及雨声、海浪、风声等助眠噪声仿真，支持整夜锁屏保活播放。">
+  <title>噪声模拟器 | 白噪声 · 粉红噪声 · 助眠噪声 · 助眠音频发生器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="page-head">
+      <div>
+        <h1>噪声模拟器 - 助眠音频发生器</h1>
+        <p class="tagline">白噪声 · 粉红噪声 · 自定义功率谱随机过程合成 · 整夜锁屏保活</p>
+      </div>
+      <button id="nightBtn" class="chip-btn" title="切换夜间模式（深色页面）">🌙 夜间</button>
+    </header>
+
+    <div class="cards">
+      <section class="card">
+        <h2><span class="no">01</span>播放器控制面板</h2>
+        <div class="controls">
+          <button id="playBtn" class="btn primary">▶ 实时试听</button>
+          <button id="sleepBtn" class="btn dark">🌙 进入睡眠模式</button>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <label>总音量 <input type="range" id="masterVol" min="0" max="100" value="80" style="width:180px"><span class="volVal" id="masterVolVal">80</span></label>
+        </div>
+        <div class="chips" id="chips">
+          <span class="chip">引擎 <b id="cEngine" class="off">空闲</b></span>
+          <span class="chip">屏幕唤醒锁 <b id="cWake" class="off">—</b></span>
+          <span class="chip">页面 <b id="cVis" class="ok">可见</b></span>
+          <span class="chip">系统媒体控制 <b id="cMedia" class="off">未激活</b></span>
+          <span class="chip">已播放 <b id="cTime">0:00</b></span>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <label>睡眠定时
+            <select id="timerSel">
+              <option value="off" selected>关闭（整夜播放）</option>
+              <option value="30">30 分钟</option>
+              <option value="60">1 小时</option>
+              <option value="120">2 小时</option>
+              <option value="240">4 小时</option>
+              <option value="480">8 小时</option>
+              <option value="600">10 小时</option>
+              <option value="720">12 小时</option>
+            </select>
+          </label>
+          <button id="dlBtn" class="small-btn">⬇ 导出当前混音 WAV</button>
+        </div>
+        <p class="status" id="status"></p>
+        <details>
+          <summary>两种引擎的差别 · 整夜使用与权限指南（点开查看）</summary>
+          <p><b>实时试听引擎：</b>使用 Web Audio 的专用音频渲染线程（原生 <code>AudioBufferSourceNode</code> 无缝循环 + <code>AnalyserNode</code> 频谱显示），循环播放全部发生在浏览器原生音频管线里，主线程没有逐样本负担，改参数即时生效。页面切后台 / 锁屏时它可能被系统挂起。</p>
+          <p><b>睡眠模式引擎：</b>把当前混音渲染为整段音频，用 Web Audio 的 <code>AudioBufferSourceNode</code> 做<b>样本级无缝循环</b>（原生 <code>&lt;audio loop&gt;</code> 在多数浏览器会在循环点产生约 20–80ms 的缝隙，故不再作为主路径）。同时用一个隐藏的 <code>&lt;audio&gt;</code> 媒体元素播放整段音频，并经 Web Audio 以 0 增益接入（静音）——它只负责注册系统媒体会话，让锁屏 / 系统播放控件正常出现，并让浏览器把该标签视为「正在播放」，减少后台被冻结或回收。若系统仍挂起 Web Audio，会自动回退到原生 <code>&lt;audio loop&gt;</code>（可出声，但循环点会有缝隙）。实时试听期间切后台，页面会自动切换到该引擎。但仍建议需要整夜播放时直接使用睡眠模式启动，以防止兼容性问题引起的错误或不可靠的后台播放。</p>
+          <h3>整夜使用与权限指南</h3>
+          <ul class="tips">
+            <li><b>首次使用：</b>所有播放都从你的点击开始（浏览器要求用户手势才允许发声）。第一次点击播放按钮时，页面会同时解锁音频权限，之后锁屏播放不再需要任何确认。</li>
+            <li><b>整夜播放的正确姿势：</b>点击「🌙 进入睡眠模式」，确认出声后<b>直接锁屏</b>即可。请勿在多任务里上滑划掉该页面（那会终止音频）。锁屏界面 / 通知栏可随时暂停或恢复。</li>
+            <li><b>屏幕唤醒锁（Wake Lock）：</b>亮屏状态下会自动申请，防止看着屏幕时自动熄屏；部分浏览器或隐私模式会拒绝（不影响睡眠模式——熄屏才是最省电的状态）。页面重新可见时会自动重新申请。</li>
+            <li><b>耗电建议：</b>优先「睡眠模式 + 熄屏」；采样率选 22050 Hz；音量尽量低（配合物理音量键）；手机建议插电过夜。连接外部蓝牙音箱也是不错的选择。</li>
+            <li><b>听不到声音？</b>检查系统媒体音量；iPhone 检查静音拨片；部分安卓机型需在系统设置中允许该浏览器「后台运行」。</li>
+            <li><b>睡眠定时：</b>到时会淡出并停止。注意 iOS 在熄屏后可能冻结页面计时器，定时停止可能延迟到点亮屏幕时执行——若要整夜播放保持「关闭」即可，这正是默认值。</li>
+            <li><b>导出 WAV：</b>把当前混音导出为音频文件，可放进本地播放器离线整夜循环（彻底不受浏览器限制）。</li>
+          </ul>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2><span class="no">02</span>功率谱设计 / 查看器</h2>
+        <div class="psd-head">
+          <p>当前查看的是：<b id="psdPresetName">—</b></p>
+          <button id="psdApply" class="small-btn" disabled>生效编辑</button>
+        </div>
+        <canvas id="psd"></canvas>
+        <div class="row">
+          <button class="small-btn" data-psd="white">白噪谱（平坦）</button>
+          <button class="small-btn" data-psd="pink">粉红谱（-10dB/dec）</button>
+          <button class="small-btn" data-psd="brown">布朗谱（-20dB/dec）</button>
+          <label>基础采样率
+            <select id="rateSel">
+              <option value="22050">22050 Hz（省电）</option>
+              <option value="44100" selected>44100 Hz（推荐）</option>
+              <option value="48000">48000 Hz</option>
+            </select>
+          </label>
+          <label>循环长度
+            <select id="loopSel">
+              <option value="2">约 3 s（极短，便于测缝隙）</option>
+              <option value="4">约 6 s（短循环）</option>
+              <option value="12">约 24 s（快速）</option>
+              <option value="30" selected>约 48 s（推荐）</option>
+              <option value="60">约 95 s（更自然）</option>
+            </select>
+          </label>
+          <span class="meta-span" id="loopInfo"></span>
+        </div>
+        <p class="hint" id="psdNote"></p>
+        <details>
+          <summary> · 功率谱与随机过程原理 / 采样率与循环长度（点开查看）</summary>
+          <p>新建的自定义预设可编辑，所有内置预设都不可编辑（因为其中一些随机过程甚至不是靠指定功率谱能实现的），此处显示其实时频谱；自定义预设可拖动圆点编辑平滑功率谱曲线。</p>
+          <p>把噪声视为广义平稳随机过程：定义功率谱密度 <code>S(f)</code>（纵轴相对 dB、横轴对数频率），为每个频率分量赋予独立随机相位，经逆傅里叶变换得到具有该功率谱的（近似高斯）随机过程样本，天然<b>周期无缝</b>、可无限循环。拖动圆点编辑，双击圆点删除。</p>
+          <p>采样率决定可合成的频率上限（奈奎斯特频率 = 采样率 / 2），降低采样率可减少数据量与耗电；循环越长，低频起伏越接近真实随机过程，但渲染耗时与内存略增。</p>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2><span class="no">03</span>预设噪声选项</h2>
+        <p class="hint">点击某一项即选中并加入混音，再点一次取消；选中的预设按钮会亮绿色灯。</p>
+        <div id="presetList"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <audio id="player" loop preload="none"></audio>
+
+  <a style="color:#efefef" href="/?p=4743" target="_self" rel="nofollow"><img src="/letc-light.png" style="display: block; width: 256px; margin: 20px auto 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></a>
+  <footer style="text-align:center; margin-top:0; padding:12px 0; font-size:0.78rem;">
+    <p><a href="https://limitless.net.cn/?p=4743" style="color:#888; text-decoration:none !important" target="_self" rel="nofollow">噪声模拟器 - 助眠音频发生器</a></p>
+    <p><a href="https://limitless.net.cn/" style="color:#888; text-decoration:none !important" target="_self" rel="nofollow">limitless © Copyright 2021~2026 All right reserved</a></p>
+  </footer>
+
+  <div id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

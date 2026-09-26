@@ -1,0 +1,254 @@
+:root{
+  --bg:#efefef; --card:#ffffff; --soft:#efefef;
+  --ink:#1e1e1e; --ink2:#555; --ink3:#888;
+  --line:#1e1e1e; --line2:#cccccc;
+  --accent:#2563eb;
+  --shadow:0 0 4px rgba(18,18,18,.15);
+  --toast-bg:#1e1e1e; --toast-ink:#efefef;
+  --ok:#2e7d32; --warn:#b26a00; --off:#999;
+  --status-rt:#b26a00; --status-sleep:#2563eb; --status-err:#c02626;
+}
+html.night{
+  --bg:#131417; --card:#1d1f23; --soft:#26292e;
+  --ink:#e8e8e8; --ink2:#a8adb3; --ink3:#7c8187;
+  --line:#3a3d44; --line2:#3a3d44;
+  --accent:#4d94ff;
+  --shadow:0 0 6px rgba(0,0,0,.45);
+  --toast-bg:#2c2f35; --toast-ink:#e8e8e8;
+  --status-rt:#e0a34a; --status-sleep:#4d94ff; --status-err:#ff6b6b;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,"PingFang SC",BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+  font-size:1rem; line-height:1.5;
+  padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{ max-width:1556px; margin:0 auto; }
+.cards{ display:grid; grid-template-columns:1fr; gap:20px; justify-items:center; }
+.page-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin:6px 0 20px; flex-wrap:wrap; }
+h1{ margin:0 0 4px; font-size:1.714rem; }
+.tagline{ margin:0; color:var(--ink2); font-size:.9rem; }
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:10px;
+  box-shadow:var(--shadow); padding:20px; margin-bottom:0;
+  width:100%; max-width:768px;
+}
+/* 卡片折叠 */
+.card-head{ cursor:pointer; user-select:none; }
+.card-head .chev{
+  margin-left:auto; font-size:.75rem; color:var(--ink3);
+  transition:transform .25s; transform:rotate(0deg);
+}
+.card.collapsed .card-head .chev{ transform:rotate(-90deg); }
+.card.collapsed .card-head{ margin-bottom:0; }
+.card.collapsed .card-head .chev{ margin-left:8px; }
+.card.collapsed .card-head .controls{ margin-left:auto; }
+.card.collapsed .card-head .btn{ padding:6px 12px; font-size:.8rem; letter-spacing:.04em; min-width:160px; }
+.card.collapsed .card-body{ display:none; }
+h2{ font-size:1.2rem; margin:0 0 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+h2 .no{
+  font-size:.72rem; letter-spacing:.15em; color:var(--soft);
+  background:var(--ink); border-radius:.35rem; padding:2px 8px; font-weight:700;
+}
+.hint{ color:var(--ink2); font-size:.88rem; margin:0 0 14px; line-height:1.7; }
+.hint b{ color:var(--ink); }
+a{ color:#404040; text-decoration:none; transition:all .3s ease-in-out; }
+a:hover,a:focus,a:active{ color:var(--accent); }
+
+/* 预设列表 */
+.preset-cat{ margin:14px 0 8px; font-size:.78rem; letter-spacing:.12em; color:var(--ink3); text-transform:uppercase; }
+.preset-cat:first-child{ margin-top:0; }
+.preset-row{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  border:1px solid var(--line2); border-radius:10px; padding:8px 10px;
+  margin-bottom:8px; background:var(--soft); transition:background-color .25s;
+}
+.preset-row.focus{ background:var(--ink); }                      /* 选中（查看中）：深色，白天 #1e1e1e */
+html.night .preset-row.focus{ background:#000; }                 /* 夜间：纯黑 */
+.preset-toggle{
+  position:relative; flex:0 0 168px; width:168px; text-align:left; cursor:pointer; user-select:none;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  border:1px solid transparent; background:transparent; color:var(--ink);
+  border-radius:8px; padding:8px 12px 8px 16px; font-size:.92rem; font-family:inherit;
+  transition:color .25s;
+}
+.preset-row.focus .preset-toggle{ color:#e8e8e8; font-weight:600; }
+/* 使能（加入混音）：按钮内部最左侧的绿色竖线 */
+.preset-toggle::before{
+  content:''; position:absolute; left:4px; top:3px; bottom:3px; width:3px;
+  border-radius:2px; background:transparent; transition:background-color .25s;
+}
+.preset-row.active .preset-toggle::before{ background:#42a66c; }
+.preset-toggle .pi{ margin-right:6px; }
+.preset-vol{ display:flex; align-items:center; gap:8px; flex:2 1 240px; min-width:170px; }
+.preset-vol input[type=range]{ flex:1 1 auto; min-width:0; background:transparent; border-color:transparent; }
+.preset-vol input[type=range]:disabled{ opacity:.45; cursor:not-allowed; pointer-events:none; }
+input.volNum:disabled{ opacity:.55; cursor:not-allowed; pointer-events:none; }
+/* 未使能时整行可点按以启用 */
+.preset-row:not(.active){ cursor:pointer; }
+.volUnit{ font-size:.82rem; color:var(--ink3); }
+.preset-row.focus .volUnit{ color:#e8e8e8; }
+input.volNum{
+  width:58px; padding:4px 6px; text-align:right; font-family:inherit; font-size:.85rem;
+  color:var(--ink); background:var(--card); border:1px solid var(--line2); border-radius:8px;
+}
+.preset-row .mini{ margin-left:0; }
+.preset-del{ flex:none; }
+.preset-add{
+  width:100%; border:1px dashed var(--line2); background:transparent; color:var(--ink2);
+  border-radius:10px; padding:9px; font-size:.85rem; cursor:pointer; font-family:inherit;
+  transition:background-color .25s,color .25s;
+}
+.preset-add:hover{ background:var(--soft); color:var(--ink); }
+
+/* 画布 */
+canvas{ display:block; width:100%; background:var(--soft); border:1px solid var(--line2); border-radius:10px; }
+#psd{ height:260px; touch-action:none; cursor:crosshair; margin-bottom:12px; }
+#psd.readonly{ cursor:default; }
+/* 当前查看预设 + 生效编辑按钮同一行，按钮铺满右侧剩余宽度 */
+.psd-head{ display:flex; align-items:center; gap:12px; margin:0 0 12px; }
+.psd-head p{ margin:0; flex:0 1 auto; min-width:0; }
+.psd-head #psdApply{ flex:0 1 auto; margin-left:auto; width:128px; max-width:128px; min-width:0; }
+
+/* 行布局 */
+.row{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-top:10px; }
+.row label{ display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--ink2); }
+
+select,input[type=range]{
+  font-family:inherit; font-size:.9rem; color:var(--ink);
+  background:var(--soft); border:1px solid var(--line2); border-radius:10px;
+}
+select{ padding:8px 10px; cursor:pointer; }
+input[type=range]{ padding:4px 2px; cursor:pointer; accent-color:var(--accent); }
+
+.small-btn{
+  border:1px solid var(--line2); background:var(--soft); color:var(--ink);
+  border-radius:10px; padding:7px 14px; font-size:.85rem; cursor:pointer;
+  transition:background-color .3s,color .3s; font-family:inherit;
+}
+.small-btn:hover{ background:var(--ink); color:var(--soft); }
+.small-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.small-btn:disabled:hover{ background:var(--soft); color:var(--ink); }
+/* 生效编辑：可用时在按钮内部左侧点亮一条绿色竖线（同使能的预设按钮） */
+#psdApply{ position:relative; overflow:hidden; }
+#psdApply::after{
+  content:''; position:absolute; left:4px; top:7px; bottom:7px; width:3px;
+  border-radius:2px; background:transparent; transition:background-color .25s;
+}
+#psdApply:not(:disabled)::after{ background:#42a66c; }
+
+.meta-span{
+  display:block; flex:1 1 100%; box-sizing:border-box; text-align:center;
+  background:var(--soft); color:var(--accent);
+  border:1px solid var(--line2); border-radius:.35rem; padding:3px 10px; font-size:.82rem;
+}
+.chip-btn{
+  position:relative; overflow:hidden; box-sizing:border-box;
+  width:96px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid var(--line2); background:var(--card); color:var(--ink);
+  border-radius:.35rem; padding:0 12px 0 16px; font-size:.85rem; cursor:pointer;
+  transition:background-color .3s,color .3s; font-family:inherit; white-space:nowrap;
+}
+.chip-btn::before{
+  content:''; position:absolute; left:4px; top:5px; bottom:5px; width:3px;
+  border-radius:2px; background:transparent; transition:background-color .25s;
+}
+html.night .chip-btn::before{ background:#42a66c; }
+.chip-btn:hover{ background:var(--ink); color:var(--soft); }
+
+/* 小按钮（删除等） */
+.mini{
+  border:1px solid var(--line2); background:var(--soft); color:var(--ink);
+  border-radius:6px; padding:2px 10px; font-size:.78rem; cursor:pointer; font-family:inherit;
+  transition:background-color .3s,color .3s;
+}
+.mini:hover{ background:var(--ink); color:var(--soft); }
+.volVal{ font-size:.8rem; color:var(--ink3); width:34px; text-align:right; }
+
+/* 控制按钮 */
+.controls{ display:flex; gap:12px; flex-wrap:wrap; }
+.btn{
+  border:1px solid var(--line); border-radius:4px; padding:12px 22px;
+  font-size:.95rem; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  font-family:inherit; font-weight:600; transition:all .25s;
+}
+.btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn.primary:hover{ background:#fff; color:var(--accent); }
+.btn.dark{ background:var(--ink); color:var(--soft); }
+.btn.dark:hover{ background:var(--soft); color:var(--ink); }
+html.night .btn.dark{ background:#000; color:#e8e8e8; border-color:#000; }
+html.night .btn.dark:hover{ background:var(--soft); color:var(--ink); border-color:var(--line2); }
+/* 固定按钮宽高，避免状态文字/emoji 变化（试听中/运行中）导致尺寸跳动 */
+.controls .btn{
+  min-width:200px; height:52px; padding:0 22px; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; text-align:center;
+}
+
+/* 状态 */
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.chip{ background:var(--soft); border:1px solid var(--line2); border-radius:.35rem; padding:4px 10px; font-size:.8rem; color:var(--ink2); white-space:nowrap; }
+.chip b{ color:var(--ink); font-weight:600; margin-left:4px; display:inline-block; }
+.chip b.ok{ color:var(--ok); } .chip b.warn{ color:var(--warn); } .chip b.off{ color:var(--off); }
+/* 为每项状态值预留固定宽度，状态变化时不再重新排版 */
+#cEngine{ min-width:10em; }
+#cWake{ min-width:6em; }
+#cVis{ min-width:4.5em; }
+#cMedia{ min-width:4em; }
+#cTime{ min-width:4.5em; }
+.status{
+  display:block; width:100%; height:2.4em; line-height:2.4em; box-sizing:border-box;
+  margin:8px 0 0; padding:0 12px; text-align:center;
+  font-size:.85rem; color:var(--ink3);
+  background:var(--soft); border:1px solid var(--line2); border-radius:.35rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.status.rt{ color:var(--status-rt); border-color:var(--status-rt); }
+.status.sleep{ color:var(--status-sleep); border-color:var(--status-sleep); }
+.status.err{ color:var(--status-err); border-color:var(--status-err); }
+
+details{ margin-top:14px; font-size:.88rem; color:var(--ink2); }
+details summary{ cursor:pointer; color:var(--ink); font-weight:600; font-size:.92rem; }
+details p{ line-height:1.8; margin:8px 0; }
+details h3{ font-size:.95rem; margin:14px 0 8px; color:var(--ink); }
+pre{
+  background:var(--soft); border:1px solid var(--line2); border-radius:10px;
+  padding:12px; overflow-x:auto; font-size:.82rem; line-height:1.6;
+}
+code{ font-family:monaco,consolas,"Andale Mono","DejaVu Sans Mono",monospace; background:var(--soft); border-radius:4px; padding:1px 5px; }
+pre code{ background:transparent; padding:0; }
+
+ul.tips{ margin:0; padding-left:20px; }
+ul.tips li{ margin-bottom:10px; line-height:1.8; font-size:.9rem; color:var(--ink2); }
+ul.tips li b{ color:var(--ink); }
+
+#toast{
+  position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px);
+  background:var(--toast-bg); color:var(--toast-ink); border:1px solid var(--line2);
+  border-radius:8px; padding:10px 18px;
+  font-size:.88rem; box-shadow:0 4px 16px rgba(0,0,0,.25); opacity:0; pointer-events:none;
+  transition:opacity .3s, transform .3s; max-width:86vw; z-index:99;
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.err{ background:#c02626; color:#fff; border-color:#c02626; }
+#toast.warn{ background:var(--warn); color:#fff; border-color:var(--warn); }
+
+@media (min-width:1200px){
+  /* 多列瀑布流：先填满第一列再填第二列，各卡片高度独立、互不对齐 */
+  .cards{ display:block; column-count:2; column-gap:20px; }
+  .cards > .card{
+    margin:0 auto 20px; break-inside:avoid; -webkit-column-break-inside:avoid;
+  }
+}
+
+@media (max-width:600px){
+  body{ padding:12px 12px calc(16px + env(safe-area-inset-bottom)); }
+  .card{ padding:14px; }
+  .btn{ padding:11px 16px; font-size:.85rem; }
+  .controls .btn{ min-width:160px; height:46px; }
+  #psd{ height:220px; }
+  .preset-toggle{ flex:1 1 100%; }
+  .preset-vol{ flex:1 1 100%; }
+}
