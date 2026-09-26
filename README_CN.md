@@ -60,45 +60,70 @@
 
 ## 系统架构说明
 
-```text
-index.html   页面结构：三张卡片 + 隐藏 <audio> 播放元素
-style.css    全部样式（含夜间模式变量、多列响应式布局）
-script.js    全部逻辑，自上而下分为若干区块
-```
+| 文件 | 说明 |
+| --- | --- |
+| `index.html` | 页面结构：三张卡片 + 隐藏 `<audio>` 播放元素 |
+| `style.css` | 全部样式（含夜间模式变量、多列响应式布局） |
+| `script.js` | 全部逻辑，自上而下分为若干区块 |
 
 `script.js` 的主要区块：
 
-```text
-工具                DOM/Toast/状态文案/计时格式化
-DSP 核心            FFT、随机相位谱合成、滤波、包络、控制点插值
-噪声类型注册表      NOISES 对象，每种噪声一个 gen(params, preset)
-状态与持久化        state、预设增删改、Cookie 读写
-渲染参数 / 缓存     renderParams、layerCache（按预设+参数缓存单层缓冲）
-混音渲染            睡眠模式 / 导出用的整段 PCM 渲染与 WAV 编码
-实时引擎            AudioContext、masterGain、每层 AudioBufferSourceNode
-睡眠引擎            Web Audio 无缝循环、媒体会话锚点、原生回退
-Wake Lock / 定时    requestWakeLock、ticker 淡出
-可视化              功率谱曲线 + 实时均衡器柱状绘制、控制点拖拽
-UI 与初始化         预设行构建、状态刷新、事件绑定、卡片折叠
-```
+| 模块 | 说明 |
+| --- | --- |
+| 工具 | DOM/Toast/状态文案/计时格式化 |
+| DSP 核心 | FFT、随机相位谱合成、滤波、包络、控制点插值 |
+| 噪声类型注册表 | NOISES 对象，每种噪声一个 gen(params, preset) |
+| 状态与持久化 | state、预设增删改、Cookie 读写 |
+| 渲染参数 / 缓存 | renderParams、layerCache（按预设+参数缓存单层缓冲） |
+| 混音渲染 | 睡眠模式 / 导出用的整段 PCM 渲染与 WAV 编码 |
+| 实时引擎 | AudioContext、masterGain、每层 AudioBufferSourceNode |
+| 睡眠引擎 | Web Audio 无缝循环、媒体会话锚点、原生回退 |
+| Wake Lock / 定时 | requestWakeLock、ticker 淡出 |
+| 可视化 | 功率谱曲线 + 实时均衡器柱状绘制、控制点拖拽 |
+| UI 与初始化 | 预设行构建、状态刷新、事件绑定、卡片折叠 |
 
 数据流：`预设列表 → layerBuffer()（调用 gen，归一化 RMS/峰值）→ 单层缓存 → 混音（RT 逐层叠加；Sleep 渲染整段）→ 输出（Web Audio / WAV）`。
-
-## 算法说明
 
 ### 随机相位功率谱合成
 
 核心函数 `synthPeriodic(N, rate, ampFn)`：
 
-1. 在频域构造长度为 `N` 的复数数组，对每个频点 `k` 由 `ampFn(f)` 得到幅值 `a`，赋予随机相位 `φ`。
-2. 填入共轭对称的一对 `re[k]/im[k]` 与 `re[N-k]/im[N-k]`，保证逆变换结果为实信号。
+1. 在频域构造长度为 \(N\) 的复数数组，对每个频点 \(k\)，由 \(\operatorname{ampFn}(f)\) 得到幅值 \(a\)，赋予随机相位 \(\varphi\)，即
+   \[
+   X[k]=a_k e^{j\varphi_k},\qquad j=\sqrt{-1}.
+   \]
+
+2. 填入共轭对称的一对 \(\operatorname{re}[k]/\operatorname{im}[k]\) 与 \(\operatorname{re}[N-k]/\operatorname{im}[N-k]\)，满足
+   \[
+   \operatorname{re}[N-k]=\operatorname{re}[k],\qquad
+   \operatorname{im}[N-k]=-\operatorname{im}[k],
+   \]
+   从而保证逆变换结果为实信号：
+   \[
+   x[n]=\operatorname{IFFT}\{X[k]\}\in\mathbb{R}.
+   \]
+
 3. 调用自实现的迭代 FFT（`fftCore`）做逆变换，得到具有指定功率谱的近似高斯随机过程样本。
 
-由于频谱离散且闭合，结果天然以 `N` 为周期，循环边界完全连续。`N = nextPow2(loopSec × rate)`，因此实际循环长度只能成倍跳（下拉里显示的秒数为近似值，`#loopInfo` 会给出真实长度）。
+由于频谱离散且闭合，结果天然以 \(N\) 为周期，循环边界完全连续：
+\[
+x[n+N]=x[n].
+\]
+并且
+\[
+N=\operatorname{nextPow2}(\mathrm{loopSec}\times \mathrm{rate}),
+\]
+因此实际循环长度只能成倍跳；下拉里显示的秒数为近似值，`#loopInfo` 会给出真实长度）。
 
 ### 控制点插值
 
-自定义谱用 `[f, dB]` 控制点在**对数频率域**上做单调三次插值（PCHIP，`makeSmoothDb`），避免过冲；`pointsToAmp` 再把相对 dB 转成幅值。
+自定义谱用 \([f,\mathrm{dB}]\) 控制点在**对数频率域**上做单调三次插值
+自定义谱用 `[f, dB]` 控制点在**对数频率域**上做单调三次插值（PCHIP，`makeSmoothDb`），避免过冲；`pointsToAmp` 再把相对 dB 转成幅值。若幅值为 \(a\)，则对应关系为
+\[
+\mathrm{dB}=20\log_{10}a
+\quad\Longleftrightarrow\quad
+a=10^{\mathrm{dB}/20}.
+\]
 
 ### 滤波与自然声音
 
