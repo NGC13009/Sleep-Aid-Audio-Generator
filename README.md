@@ -9,7 +9,7 @@ No build, no dependencies, no backend. Noise is treated as a wide-sense stationa
 
 Click the link below to try it immediately:
 
-[Simulator - Sleep Aid Audio Generator](https://ngc13009.github.io/Sleep-Aid-Audio-GeneratorNoise)
+[Simulator - Sleep Aid Audio Generator](https://ngc13009.github.io/Sleep-Aid-Audio-Generator/)
 
 For feedback, contact the site administrator.
 
