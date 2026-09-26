@@ -11,15 +11,13 @@ Click the link below to try it immediately:
 
 [Simulator - Sleep Aid Audio Generator](https://ngc13009.github.io/Sleep-Aid-Audio-Generator/)
 
-For feedback, contact the site administrator.
-
 [TOC]
 
 ## Quick Start
 
 Try it [via this site](https://ngc13009.github.io/Sleep-Aid-Audio-Generator/).
 
-Or download the source code and self-host it: simply open `index.html` directly in a browser (it can also be hosted on any static server). Contact the site administrator to obtain the source code.
+Or download the source code and self-host it: simply open `index.html` directly in a browser (it can also be hosted on any static server).
 
 Basic usage:
 
