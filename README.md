@@ -58,43 +58,72 @@ If the page is sent to the background during Live Preview, it automatically swit
 - **Screen Wake Lock**: automatically requested while the screen is on to prevent auto screen-off; if unsupported, Sleep Mode is unaffected.
 - **Settings Persistence**: all buttons, options, volumes, spectra, collapsed states, etc. are written to cookies (kept for 90 days) and automatically restored the next time you open the page.
 
-## System Architecture
+## System Architecture Overview
 
-```text
-index.html   Page structure: three cards + hidden <audio> playback element
-style.css    All styles (including night mode variables, multi-column responsive layout)
-script.js    All logic, divided top-down into several sections
-```
+| File | Description |
+| --- | --- |
+| `index.html` | Page structure: three cards + hidden `<audio>` playback element |
+| `style.css` | All styles (including dark mode variables, multi-column responsive layout) |
+| `script.js` | All logic, divided top-down into several blocks |
 
-Main sections of `script.js`:
+Main blocks in `script.js`:
 
-```text
-Utilities           DOM/Toast/status text/timer formatting
-DSP core            FFT, random-phase spectrum synthesis, filtering, envelope, control-point interpolation
-Noise type registry NOISES object, one gen(params, preset) per noise
-State and persistence state, preset add/delete/edit, cookie read/write
-Render params / cache renderParams, layerCache (caches single-layer buffers by preset + params)
-Mix rendering       full-length PCM rendering and WAV encoding for sleep mode / export
-Realtime engine     AudioContext, masterGain, per-layer AudioBufferSourceNode
-Sleep engine        Web Audio seamless loop, media session anchor, native fallback
-Wake Lock / timer   requestWakeLock, ticker fade-out
-Visualization       power spectrum curve + live equalizer bar rendering, control-point dragging
-UI and initialization preset row construction, status refresh, event binding, card collapse
-```
+| Module | Description |
+| --- | --- |
+| Utilities | DOM/Toast/status text/timer formatting |
+| DSP Core | FFT, random-phase spectrum synthesis, filtering, envelope, control point interpolation |
+| Noise Type Registry | `NOISES` object, one `gen(params, preset)` per noise type |
+| State and Persistence | `state`, preset add/delete/modify, Cookie read/write |
+| Render Parameters / Cache | `renderParams`, `layerCache` (cache single-layer buffers by preset + parameters) |
+| Mixdown Rendering | Full-segment PCM rendering and WAV encoding for sleep mode / export |
+| Real-time Engine | `AudioContext`, `masterGain`, one `AudioBufferSourceNode` per layer |
+| Sleep Engine | Web Audio seamless loop, media session anchor, native fallback |
+| Wake Lock / Timer | `requestWakeLock`, `ticker` fade-out |
+| Visualization | Power spectrum curve + real-time equalizer bar rendering, control point dragging |
+| UI and Initialization | Preset row construction, state refresh, event binding, card collapsing |
 
-Data flow: `preset list → layerBuffer() (calls gen, normalizes RMS/peak) → single-layer cache → mix (RT overlays layer by layer; Sleep renders the full segment) → output (Web Audio / WAV)`.
-
-## Algorithm Description
+Data flow: `preset list → layerBuffer() (calls gen, normalizes RMS/peak) → single-layer cache → mixdown (RT layer-by-layer superposition; Sleep renders the whole segment) → output (Web Audio / WAV)`.
 
 ### Random-Phase Power Spectrum Synthesis
 
 Core function `synthPeriodic(N, rate, ampFn)`:
 
-1. Construct a complex array of length `N` in the frequency domain; for each frequency bin `k`, obtain amplitude `a` from `ampFn(f)`, and assign a random phase `φ`.
-2. Fill in the conjugate symmetric pair `re[k]/im[k]` and `re[N-k]/im[N-k]`, ensuring the inverse transform result is a real signal.
-3. Call the self-implemented iterative FFT (`fftCore`) to perform the inverse transform, producing approximate Gaussian random process samples with the specified power spectrum.
+1. Construct a complex array of length \(N\) in the frequency domain. For each frequency bin \(k\), obtain amplitude \(a\) from \(\operatorname{ampFn}(f)\), assign random phase \(\varphi\), i.e.
+   \[
+   X[k]=a_k e^{j\varphi_k},\qquad j=\sqrt{-1}.
+   \]
 
-Because the spectrum is discrete and closed, the result is naturally periodic with period `N`, and the loop boundary is completely continuous. `N = nextPow2(loopSec × rate)`, so the actual loop length can only jump in powers of two (the seconds shown in the dropdown are approximate; `#loopInfo` gives the actual length).
+2. Fill in a conjugate-symmetric pair \(\operatorname{re}[k]/\operatorname{im}[k]\) and \(\operatorname{re}[N-k]/\operatorname{im}[N-k]\), satisfying
+   \[
+   \operatorname{re}[N-k]=\operatorname{re}[k],\qquad
+   \operatorname{im}[N-k]=-\operatorname{im}[k],
+   \]
+   thereby ensuring that the inverse transform result is a real signal:
+   \[
+   x[n]=\operatorname{IFFT}\{X[k]\}\in\mathbb{R}.
+   \]
+
+3. Call the self-implemented iterative FFT (`fftCore`) to perform the inverse transform, obtaining samples of an approximately Gaussian random process with the specified power spectrum.
+
+Since the spectrum is discrete and closed, the result is naturally periodic with period \(N\), and the loop boundary is fully continuous:
+\[
+x[n+N]=x[n].
+\]
+Moreover,
+\[
+N=\operatorname{nextPow2}(\mathrm{loopSec}\times \mathrm{rate}),
+\]
+so the actual loop length can only jump in powers of two; the seconds displayed in the dropdown are approximate, and `#loopInfo` gives the actual length).
+
+### Control Point Interpolation
+
+The custom spectrum uses \([f,\mathrm{dB}]\) control points to perform monotone cubic interpolation in the **logarithmic frequency domain**.
+The custom spectrum uses `[f, dB]` control points to perform monotone cubic interpolation (PCHIP, `makeSmoothDb`) in the **logarithmic frequency domain**, avoiding overshoot; `pointsToAmp` then converts relative dB to amplitude. If the amplitude is \(a\), the corresponding relation is
+\[
+\mathrm{dB}=20\log_{10}a
+\quad\Longleftrightarrow\quad
+a=10^{\mathrm{dB}/20}.
+\]
 
 ### Control-Point Interpolation
 
