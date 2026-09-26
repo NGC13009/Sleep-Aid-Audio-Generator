@@ -17,7 +17,7 @@ For feedback, contact the site administrator.
 
 ## Quick Start
 
-Try it [via this site](https://ngc13009.github.io/Sleep-Aid-Audio-GeneratorNoise).
+Try it [via this site](https://ngc13009.github.io/Sleep-Aid-Audio-Generator/).
 
 Or download the source code and self-host it: simply open `index.html` directly in a browser (it can also be hosted on any static server). Contact the site administrator to obtain the source code.
 
